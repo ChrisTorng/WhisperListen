@@ -5,16 +5,19 @@ from dev import printa, printa_end, printtv, init_print
 from whisper_online import FasterWhisperASR
 from types import SimpleNamespace
 import time
+import sys
+from recording import print_microphones, get_device_name
 
 RATE = 16000
 FRAMES_PER_BUFFER = int(RATE * 0.03)  # 30ms=480, tried the max supported
 
 class WhisperListener:
-    def __init__(self, model_size="base", device_type="cuda_float16"):
+    def __init__(self, model_size="base", device_type="cuda_float16", input_device_index=None):
         self.vad = webrtcvad.Vad(3)
         self.pa = pyaudio.PyAudio()
         self.asr = FasterWhisperASR("zh", device_type, model_size)
         self.asr.use_vad()
+        self.input_device_index = input_device_index
 
         # VAD parameters
         self.finished_speech_seconds = 0.5
@@ -61,6 +64,7 @@ class WhisperListener:
             channels=1,
             rate=RATE,
             input=True,
+            input_device_index=self.input_device_index,
             frames_per_buffer=FRAMES_PER_BUFFER
         )
 
@@ -77,7 +81,7 @@ class WhisperListener:
         """使用 Whisper 模型進行語音識別"""
         try:
             audio_np = np.frombuffer(audio_bytes, dtype=np.int16).astype(np.float32) / 32768.0
-            result = self.asr.transcribe(audio_np)
+            result = self.asr.transcribe(audio_np) #, init_prompt="中華電信語音客服，繁體中文台灣口音。")
             if result:
                 text = ' '.join([segment.text for segment in result])
                 return text.strip()
@@ -94,20 +98,37 @@ def main():
     )
     init_print(args)
     
-    listener = WhisperListener()
-    
-    while True:
-        try:
-            audio = listener.listen()
-            # print("\n正在處理語音...")
-            text = listener.transcribe(audio)
-            print(text)
+    # 處理命令列參數
+    if len(sys.argv) == 1:
+        print_microphones()
+        return
+        
+    try:
+        device_index = int(sys.argv[1])
+        device_name = get_device_name(device_index)
+        if device_name is None:
+            print(f"錯誤：找不到索引 {device_index} 的麥克風裝置")
+            print_microphones()
+            return
+            
+        listener = WhisperListener(input_device_index=device_index)
+        print(f"\n使用麥克風：[{device_index}] {device_name}")
+        
+        while True:
+            try:
+                audio = listener.listen()
+                text = listener.transcribe(audio)
+                print(text)
+                    
+            except KeyboardInterrupt:
+                print("\n程式結束")
+                break
+            except Exception as e:
+                print(f"發生錯誤: {str(e)}")
                 
-        except KeyboardInterrupt:
-            print("\n程式結束")
-            break
-        except Exception as e:
-            print(f"發生錯誤: {str(e)}")
+    except ValueError:
+        print("請提供有效的麥克風裝置索引值")
+        print_microphones()
 
 if __name__ == "__main__":
     main()

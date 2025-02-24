@@ -2,7 +2,7 @@ import webrtcvad
 import pyaudio
 import numpy as np
 from dev import printa, printa_end, printtv, init_print
-from whisper_online import FasterWhisperASR
+from faster_whisper import WhisperModel
 from types import SimpleNamespace
 import time
 import sys
@@ -10,18 +10,21 @@ from recording import print_microphones, get_device_name
 
 MODEL_SIZE="tiny"
 # MODEL_SIZE="base"
-# DEVICE_TYPE="cuda_float16"
-DEVICE_TYPE="cpu_int8"
+# MODEL_SIZE="turbo"
+DEVICE="cuda"
+# DEVICE="cpu"
+COMPUTE_TYPE="float16"
+# COMPUTE_TYPE="int8_float16"
+# COMPUTE_TYPE="int8"
 
 RATE = 16000
 FRAMES_PER_BUFFER = int(RATE * 0.03)  # 30ms=480, tried the max supported
 
 class WhisperListener:
-    def __init__(self, model_size=MODEL_SIZE, device_type=DEVICE_TYPE, input_device_index=None):
-        self.vad = webrtcvad.Vad(3)
+    def __init__(self, model_size=MODEL_SIZE, device=DEVICE, compute_type=COMPUTE_TYPE, input_device_index=None):
+        self.vad = webrtcvad.Vad(3)  # 初始化 VAD，敏感度設為 3 (最高)
         self.pa = pyaudio.PyAudio()
-        self.asr = FasterWhisperASR("zh", device_type, model_size)
-        self.asr.use_vad()
+        self.model = WhisperModel(model_size, device=device, compute_type=compute_type)
         self.input_device_index = input_device_index
 
         # VAD parameters
@@ -86,10 +89,10 @@ class WhisperListener:
         """使用 Whisper 模型進行語音識別"""
         try:
             audio_np = np.frombuffer(audio_bytes, dtype=np.int16).astype(np.float32) / 32768.0
-            result = self.asr.transcribe(audio_np) #, init_prompt="中華電信語音客服，繁體中文台灣口音。")
-            if result:
-                text = ' '.join([segment.text for segment in result])
-                return text.strip()
+            # result = self.asr.transcribe(audio_np) #, init_prompt="語音交談，繁體中文台灣口音。")
+            segments, info = self.model.transcribe(audio_np)
+            text = ' '.join([segment.text for segment in segments])
+            return text.strip()
         except Exception as e:
             printtv(f"識別過程發生錯誤: {str(e)}")
         return ""

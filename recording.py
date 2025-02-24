@@ -8,7 +8,6 @@ def list_microphones():
     for i in range(pa.get_device_count()):
         device_info = pa.get_device_info_by_index(i)
         
-        # 只選擇 Windows DirectSound 裝置且具有輸入功能的裝置
         if (device_info['maxInputChannels'] > 0):
         # if (device_info['maxInputChannels'] > 0 and
         #     'MME' in pa.get_host_api_info_by_index(device_info['hostApi'])['name']):

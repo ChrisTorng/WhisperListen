@@ -9,6 +9,8 @@ pip install torch torchvision torchaudio --index-url https://download.pytorch.or
 pip install webrtcvad-wheels
 pip install pyaudio keyboard
 #set PYTHONIOENCODING=utf-8
-python whisper_listen.py
-python whisper_listen.py 0
+python faster_whisper_listen.py
+python faster_whisper_listen.py 0
+python whisper_online_listen.py
+python whisper_online_listen.py 0
 ```

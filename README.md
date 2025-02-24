@@ -10,4 +10,5 @@ pip install webrtcvad-wheels
 pip install pyaudio keyboard
 #set PYTHONIOENCODING=utf-8
 python whisper_listen.py
+python whisper_listen.py 0
 ```

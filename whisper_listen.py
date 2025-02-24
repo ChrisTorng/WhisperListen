@@ -8,11 +8,16 @@ import time
 import sys
 from recording import print_microphones, get_device_name
 
+MODEL_SIZE="tiny"
+# MODEL_SIZE="base"
+# DEVICE_TYPE="cuda_float16"
+DEVICE_TYPE="cpu_int8"
+
 RATE = 16000
 FRAMES_PER_BUFFER = int(RATE * 0.03)  # 30ms=480, tried the max supported
 
 class WhisperListener:
-    def __init__(self, model_size="base", device_type="cuda_float16", input_device_index=None):
+    def __init__(self, model_size=MODEL_SIZE, device_type=DEVICE_TYPE, input_device_index=None):
         self.vad = webrtcvad.Vad(3)
         self.pa = pyaudio.PyAudio()
         self.asr = FasterWhisperASR("zh", device_type, model_size)

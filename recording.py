@@ -9,14 +9,16 @@ def list_microphones():
         device_info = pa.get_device_info_by_index(i)
         
         # 只選擇 Windows DirectSound 裝置且具有輸入功能的裝置
-        if (device_info['maxInputChannels'] > 0 and
-            'MME' in pa.get_host_api_info_by_index(device_info['hostApi'])['name']):
+        if (device_info['maxInputChannels'] > 0):
+        # if (device_info['maxInputChannels'] > 0 and
+        #     'MME' in pa.get_host_api_info_by_index(device_info['hostApi'])['name']):
             
             name = device_info['name']
                 
             devices.append({
                 'index': i,
                 'name': name,
+                'hostApi': pa.get_host_api_info_by_index(device_info['hostApi'])['name'],
                 'channels': device_info['maxInputChannels'],
                 'sample_rate': int(device_info['defaultSampleRate'])
             })
@@ -28,10 +30,8 @@ def print_microphones():
     """顯示所有可用的麥克風裝置"""
     devices = list_microphones()
     print("\n可用的麥克風裝置：")
-    print("-" * 50)
     for device in devices:
-        print(f"[{device['index']}] {device['name']}")
-    print("-" * 50)
+        print(f"[{device['index']}] {device['hostApi']}: {device['name']}")
 
 def get_device_name(index):
     """取得指定索引的裝置名稱"""
